@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "dotenv": "^10.0.0",
+    "mysql2": "^2.3.2",
+    "web3": "^1.6.0"
+  },
+  "devDependencies": {
+    "db-migrate": "^1.0.0-beta.16",
+    "db-migrate-mysql": "^2.2.0"
+  }
+}

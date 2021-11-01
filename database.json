@@ -1,0 +1,10 @@
+{
+    "defaultEnv": "dev",
+    "dev": {
+        "driver": "mysql",
+        "user": "root",
+        "password": {"ENV": "MYSQL_ROOT_PASSWORD"},
+        "port": 33061,
+        "database": "test"
+    }
+}
