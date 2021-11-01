@@ -31,6 +31,12 @@ async function protocolInfoOf(contract) {
     const decimals = await remoteContract.methods.decimals().call()
     const totalSupply = await remoteContract.methods.totalSupply().call()
 
+    /**NOTE
+     * []
+     * Some info like creation date, version,etc might be collected manually or iterated the blockchain.
+     * Blockchain data should be indexed in a database to extract those data.
+     * Leave those null for now
+     */
     return {
         address: contract.address,
         name: name,
