@@ -1,7 +1,6 @@
 /* Replace with your SQL commands */
 CREATE TABLE IF NOT EXISTS protocol_information(
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
-    address VARCHAR(255) UNIQUE NOT NULL,
     protocol_name_long VARCHAR(50) DEFAULT NULL,
     protocol_name_short VARCHAR(50) DEFAULT NULL,
     creation_time TIMESTAMP DEFAULT NULL,
