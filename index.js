@@ -5,10 +5,12 @@ const Web3 = require('web3')
 const mysql = require('mysql2')
 const dbConf = require('./database.json')
 
-const tokens = require('./contracts/tokens.json')
+const chains = require('./contracts/chains.json')
 const token_abi = {
     bep20: require('./contracts/bep20.json'),
-    erc20: require('./contracts/erc20.json')
+    erc20: require('./contracts/erc20.json'),
+    "iuniswapv2-factory-abi": require('./contracts/iuniswapv2-factory-abi.json'),
+    "iuniswapv2-router-abi": require('./contracts/iuniswapv2-router-abi.json')
 }
 
 const pancakeswap = require('./contracts/pancakeswap.json')
@@ -44,6 +46,7 @@ async function protocolInfoOf(token) {
         name: name,
         symbol: symbol,
         totalSupply: totalSupply / (10 ** decimals),
+        chain: token.chain
     }
 }
 
@@ -54,29 +57,50 @@ function quote(x) {
 
 async function protocolInfo() {
 
-    const promises = Object.keys(tokens)
-        .map(k => {
-            return protocolInfoOf(tokens[k])
-        })
+    const promises = Object.entries(chains).flatMap(([name, chain]) => {
+
+        return Object.values(chain.tokens)
+            .map(token => {
+                return {
+                    chain: name,
+                    provider: chain.provider,
+                    ...token
+                }
+            })
+    })
+    .map(token => protocolInfoOf(token))
 
     const xs = await Promise.all(promises)
     const sqlValues = xs
-        .map(x => [quote(x.name), quote(x.symbol), quote(x.symbol), quote(x.totalSupply)])
+        .map(x => [quote(x.name), quote(x.symbol), quote(x.symbol), quote(x.chain), quote(x.totalSupply)])
         .map(x => `(${x.join(',')})`)
         .join(',')
 
     const _ = await connection.promise().execute("TRUNCATE TABLE protocol_information")
     const rs = await connection.promise().execute(
-        `INSERT INTO protocol_information (protocol_name_long,protocol_name_short,token_name,maximum_supply) `+
+        `INSERT INTO protocol_information (protocol_name_long,protocol_name_short,token_name,operating_chain,maximum_supply) `+
         `VALUES ${sqlValues} `
     )
 
     return rs
 }
 
+// async function tokenPriceOf(iuniswapv2, token) {
+//     const web3 = new Web3(token.provider)
+//     const factory = new web3.eth.Contract(token_abi[iuniswapv2.factory.abi], iuniswapv2.factory.address)
+//     const router = new web3.eth.Contract(token_abi[iuniswapv2.router.abi], iuniswapv2.router.address)
 
-async function tokenPrice() {
-}
+
+//     const pair = await factory.methods.getPair(token, iuniswapv2.usdt.address).call()
+//     // const tokenDecimal =
+
+// }
+
+
+// async function tokenPrice() {
+//     const tokenAddresses = Object.keys(tokens).map(k => tokens[k].address)
+//     const _ = await Promise.all(tokenAddresses.map(token => tokenPriceOf(token)))
+// }
 
 
 
