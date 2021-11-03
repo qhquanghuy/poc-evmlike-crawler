@@ -17,4 +17,5 @@ services:
     command: --syncmode light --http --ws --http.api personal,eth,net,web3 --http.corsdomain '*' --http.addr 0.0.0.0 --ws.addr 0.0.0.0
     ports:
       - 8545:8545
+      - 8546:8546
       - 30303:30303

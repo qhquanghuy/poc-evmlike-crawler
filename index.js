@@ -1,19 +1,26 @@
 
-require('dotenv').config()
-const Web3 = require('web3')
 
-const mysql = require('mysql2')
+import dotenv from 'dotenv'
+dotenv.config()
+
+import fs from 'fs'
+import pLimit from 'p-limit'
+
+import Web3 from 'web3'
+
+import mysql from 'mysql2'
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
 const dbConf = require('./database.json')
+import chains from './contracts/chains.js'
 
-const chains = require('./contracts/chains.json')
-const token_abi = {
+const limit = pLimit(8)
+const abis = {
     bep20: require('./contracts/bep20.json'),
     erc20: require('./contracts/erc20.json'),
     "iuniswapv2-factory-abi": require('./contracts/iuniswapv2-factory-abi.json'),
-    "iuniswapv2-router-abi": require('./contracts/iuniswapv2-router-abi.json')
+    "iuniswapv2-pair-abi": require('./contracts/iuniswapv2-pair-abi.json')
 }
-
-const pancakeswap = require('./contracts/pancakeswap.json')
 
 const connection = (() => {
     const conf = dbConf[dbConf.defaultEnv]
@@ -23,14 +30,35 @@ const connection = (() => {
         database: conf.database,
         password: process.env[conf.password.ENV],
         port: 33061
-      });
+    });
 })()
 
 
-async function protocolInfoOf(token) {
-    const web3 = new Web3(token.provider)
-    const contract = new web3.eth.Contract(token_abi[token.abi], token.address)
+function allTokens() {
+    return chains.flatMap(chain => {
 
+        return Object.values(chain.tokens)
+            .map(token => {
+                return {
+                    chain: chain,
+                    ...token
+                }
+            })
+    })
+}
+
+function contractOf(token) {
+    const web3 = new Web3(token.chain.provider)
+    const contract = new web3.eth.Contract(abis[token.abi], token.address)
+    return contract
+}
+
+async function decimalsOf(token) {
+    return contractOf(token).methods.decimals().call()
+}
+
+async function protocolInfoOf(token) {
+    const contract = contractOf(token)
     const name = await contract.methods.name().call()
     const symbol = await contract.methods.symbol().call()
     const decimals = await contract.methods.decimals().call()
@@ -45,8 +73,9 @@ async function protocolInfoOf(token) {
     return {
         name: name,
         symbol: symbol,
+        decimals: decimals,
         totalSupply: totalSupply / (10 ** decimals),
-        chain: token.chain
+        chain: token.chain.name
     }
 }
 
@@ -57,18 +86,7 @@ function quote(x) {
 
 async function protocolInfo() {
 
-    const promises = Object.entries(chains).flatMap(([name, chain]) => {
-
-        return Object.values(chain.tokens)
-            .map(token => {
-                return {
-                    chain: name,
-                    provider: chain.provider,
-                    ...token
-                }
-            })
-    })
-    .map(token => protocolInfoOf(token))
+    const promises = allTokens().map(token => protocolInfoOf(token))
 
     const xs = await Promise.all(promises)
     const sqlValues = xs
@@ -78,36 +96,73 @@ async function protocolInfo() {
 
     const _ = await connection.promise().execute("TRUNCATE TABLE protocol_information")
     const rs = await connection.promise().execute(
-        `INSERT INTO protocol_information (protocol_name_long,protocol_name_short,token_name,operating_chain,maximum_supply) `+
+        `INSERT INTO protocol_information (protocol_name_long,protocol_name_short,token_name,operating_chain,maximum_supply) ` +
         `VALUES ${sqlValues} `
     )
 
     return rs
 }
 
-// async function tokenPriceOf(iuniswapv2, token) {
-//     const web3 = new Web3(token.provider)
-//     const factory = new web3.eth.Contract(token_abi[iuniswapv2.factory.abi], iuniswapv2.factory.address)
-//     const router = new web3.eth.Contract(token_abi[iuniswapv2.router.abi], iuniswapv2.router.address)
+async function tokenPriceIn(data) {
+    const { chain, exchange, token } = data
+    const web3 = new Web3(chain.provider)
+    const factory = new web3.eth.Contract(abis[exchange.factory.abi], exchange.factory.address)
+
+    const price = async (token0, token1) => {
+        const pairAddr = await factory.methods.getPair(token0.address, token1.address).call()
+        const contract = new web3.eth.Contract(abis['iuniswapv2-pair-abi'], pairAddr)
+        const decimals0 = await decimalsOf({...token0, chain: chain})
+        const decimals1 =  await decimalsOf({...token1, chain: chain})
+        const start = Date.now()
+        const { reserve0, reserve1 } = await contract.methods.getReserves().call()
+        const end = Date.now()
+
+        console.log(token0, reserve0, token1, reserve1)
+
+        const ascOrdered = token0.address.toLowerCase() < token1.address.toLowerCase()
+
+        return {
+            price: ascOrdered ? (reserve1 / reserve0) * (10**(decimals0 - decimals1)) : (reserve0 / reserve1) * (10**(decimals0 - decimals1)),
+            time: end - start
+        }
+    }
+
+    const prices = await Promise.all([
+        price(token, exchange.weth),
+        price(exchange.weth, exchange.usdt)
+    ])
+
+    return prices.reduce((acc, ele) => {
+        return {
+            price: acc.price * ele.price,
+            time: acc.time + ele.time
+        }
+    }, {price: 1, time: 0})
 
 
-//     const pair = await factory.methods.getPair(token, iuniswapv2.usdt.address).call()
-//     // const tokenDecimal =
-
-// }
+}
 
 
-// async function tokenPrice() {
-//     const tokenAddresses = Object.keys(tokens).map(k => tokens[k].address)
-//     const _ = await Promise.all(tokenAddresses.map(token => tokenPriceOf(token)))
-// }
+async function tokenPrice() {
+    const data = await Promise.all(
+        chains.flatMap(chain => {
+            return chain.exchanges.flatMap(exchange => chain.tokens.map(token => {
+                return { chain: { provider: chain.provider } , exchange: exchange, token: token }
+            }))
+        })
+        .map(data => tokenPriceIn(data))
+    )
+    return data
+}
 
 
 
 
 
 function run() {
-    return protocolInfo()
+    return tokenPrice()
+    // return protocolInfo()
 }
 
-run().then(console.log).catch(console.error)
+run()
+    .then(console.log).catch(console.error)

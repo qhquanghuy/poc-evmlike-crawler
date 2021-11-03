@@ -1,0 +1,77 @@
+export default [
+    {
+        "name": "polygon",
+        "provider": "https://polygon-rpc.com",
+        "tokens": [
+            {
+                "name": "aave",
+                "abi": "erc20",
+                "address": "0xD6DF932A45C0f255f85145f286eA0b292B21C90B"
+            },
+            {
+                "name": "quick",
+                "abi": "erc20",
+                "address": "0x831753dd7087cac61ab5644b308642cc1c33dc13"
+            },
+            {
+                "name": "comp",
+                "abi": "erc20",
+                "address": "0x8505b9d2254a7ae468c0e9dd10ccea3a837aef5c"
+            }
+        ],
+        "exchanges": [
+            {
+                "name": "quickswap",
+                "factory": {
+                    "abi": "iuniswapv2-factory-abi",
+                    "address": "0x5757371414417b8c6caad45baef941abc7d3ab32"
+                },
+                "usdt": {
+                    "abi": "erc20",
+                    "address": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f"
+                },
+                "weth": {
+                    "abi": "erc20",
+                    "address": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619"
+                }
+            }
+        ]
+    },
+    {
+        "name": "ethereum",
+        "provider": "ws://localhost:8546",
+        "tokens": [
+            {
+                "name": "aave",
+                "abi": "erc20",
+                "address": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9"
+            }
+        ],
+        "exchanges": []
+    },
+    {
+        "name": "bsc",
+        "provider": "wss://bsc-ws-node.nariox.org:443",
+        "tokens": [
+            {
+                "name": "cake",
+                "abi": "bep20",
+                "address": "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82"
+            }
+        ],
+        "exchanges": []
+        // "exchanges": [
+        //     {
+        //         "name": "pancakeswap",
+        //         "factory": {
+        //             "abi": "iuniswapv2-factory-abi",
+        //             "address": "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73"
+        //         },
+        //         "usdt": {
+        //             "abi": "bep20",
+        //             "address": "0x55d398326f99059fF775485246999027B3197955"
+        //         }
+        //     }
+        // ]
+    }
+]
