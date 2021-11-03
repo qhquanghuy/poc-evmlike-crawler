@@ -123,21 +123,26 @@ async function tokenPriceIn(data) {
 
         return {
             price: ascOrdered ? (reserve1 / reserve0) * (10**(decimals0 - decimals1)) : (reserve0 / reserve1) * (10**(decimals0 - decimals1)),
-            time: end - start
+            start: start,
+            end: end
         }
     }
 
     const prices = await Promise.all([
-        price(token, exchange.weth),
-        price(exchange.weth, exchange.usdt)
+        price(token, exchange.eth),
+        price(exchange.eth, exchange.usdt)
     ])
 
-    return prices.reduce((acc, ele) => {
-        return {
-            price: acc.price * ele.price,
-            time: acc.time + ele.time
-        }
-    }, {price: 1, time: 0})
+    return {
+        protocolName: exchange.name,
+        tokenName: token.name,
+        ...prices.reduce((acc, ele) => {
+            return {
+                price: acc.price * ele.price,
+                connectionTime: acc.connectionTime + ele.end - ele.start
+            }
+        }, {price: 1, connectionTime: 0})
+    }
 
 
 }

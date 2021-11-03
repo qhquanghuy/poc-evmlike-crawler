@@ -9,14 +9,9 @@ export default [
                 "address": "0xD6DF932A45C0f255f85145f286eA0b292B21C90B"
             },
             {
-                "name": "quick",
+                "name": "cel",
                 "abi": "erc20",
-                "address": "0x831753dd7087cac61ab5644b308642cc1c33dc13"
-            },
-            {
-                "name": "comp",
-                "abi": "erc20",
-                "address": "0x8505b9d2254a7ae468c0e9dd10ccea3a837aef5c"
+                "address": "0xd85d1e945766fea5eda9103f918bd915fbca63e6"
             }
         ],
         "exchanges": [
@@ -30,7 +25,7 @@ export default [
                     "abi": "erc20",
                     "address": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f"
                 },
-                "weth": {
+                "eth": {
                     "abi": "erc20",
                     "address": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619"
                 }
@@ -57,21 +52,29 @@ export default [
                 "name": "cake",
                 "abi": "bep20",
                 "address": "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82"
+            },
+            {
+                "name": "comp",
+                "abi": "bep20",
+                "address": "0x52CE071Bd9b1C4B00A0b92D298c512478CaD67e8"
             }
         ],
-        "exchanges": []
-        // "exchanges": [
-        //     {
-        //         "name": "pancakeswap",
-        //         "factory": {
-        //             "abi": "iuniswapv2-factory-abi",
-        //             "address": "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73"
-        //         },
-        //         "usdt": {
-        //             "abi": "bep20",
-        //             "address": "0x55d398326f99059fF775485246999027B3197955"
-        //         }
-        //     }
-        // ]
+        "exchanges": [
+            {
+                "name": "pancakeswap",
+                "factory": {
+                    "abi": "iuniswapv2-factory-abi",
+                    "address": "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73"
+                },
+                "usdt": {
+                    "abi": "bep20",
+                    "address": "0x55d398326f99059fF775485246999027B3197955"
+                },
+                "eth": {
+                    "abi": "bep20",
+                    "address": "0x2170ed0880ac9a755fd29b2688956bd959f933f8"
+                }
+            }
+        ]
     }
 ]
