@@ -33,6 +33,8 @@ const connection = (() => {
     });
 })()
 
+const web3s = Object.fromEntries(chains.map(chain => [chain.name, new Web3(chain.provider)]))
+
 
 function allTokens() {
     return chains.flatMap(chain => {
@@ -40,7 +42,7 @@ function allTokens() {
         return Object.values(chain.tokens)
             .map(token => {
                 return {
-                    chain: chain,
+                    chain: {name: chain.name},
                     ...token
                 }
             })
@@ -48,8 +50,9 @@ function allTokens() {
 }
 
 function web3Contract(web3) {
-    return (contract) => {
-        return new web3.eth.Contract(abis[contract.abi], contract.address)
+    return (config) => {
+
+        return new web3.eth.Contract(abis[config.abi], config.address)
     }
 }
 
@@ -58,15 +61,11 @@ async function erc20Decimals(contract) {
 }
 
 async function protocolInfoOf(token) {
-    const web3 = new Web3(token.chain.provider)
-    const contractOf = web3Contract(web3)
-    const contract = contractOf(token)
+    const contract = web3Contract(web3s[token.chain.name])(token)
     const name = await contract.methods.name().call()
     const symbol = await contract.methods.symbol().call()
     const decimals = await contract.methods.decimals().call()
     const totalSupply = await contract.methods.totalSupply().call()
-
-    web3.currentProvider.disconnect()
 
     /**NOTE
      * []
@@ -109,14 +108,15 @@ async function protocolInfo() {
 
 async function tokenPriceIn(data) {
     const { chain, exchange, token } = data
-    const web3 = new Web3(chain.provider)
-    const factory = new web3.eth.Contract(abis[exchange.factory.abi], exchange.factory.address)
+    const web3 = web3s[chain.name]
+    const contractFrom = web3Contract(web3)
+    const factory = contractFrom(exchange.factory)
 
     const price = async (token0, token1) => {
         const pairAddr = await factory.methods.getPair(token0.address, token1.address).call()
         const contract = new web3.eth.Contract(abis['iuniswapv2-pair-abi'], pairAddr)
-        const decimals0 = await erc20Decimals(web3Contract(web3)(token0))
-        const decimals1 =  await erc20Decimals(web3Contract(web3)(token1))
+        const decimals0 = await erc20Decimals(contractFrom(token0))
+        const decimals1 =  await erc20Decimals(contractFrom(token1))
         const start = Date.now()
         const { reserve0, reserve1 } = await contract.methods.getReserves().call()
         const end = Date.now()
@@ -135,8 +135,6 @@ async function tokenPriceIn(data) {
         price(token, exchange.eth),
         price(exchange.eth, exchange.usdt)
     ])
-
-    web3.currentProvider.disconnect()
 
     return {
         protocolName: exchange.name,
@@ -165,7 +163,7 @@ async function tokenPrice() {
     const data = await Promise.all(
         chains.flatMap(chain => {
             return chain.exchanges.flatMap(exchange => chain.tokens.map(token => {
-                return { chain: { provider: chain.provider } , exchange: exchange, token: token }
+                return { chain: { name: chain.name, provider: chain.provider } , exchange: exchange, token: token }
             }))
         })
         .map(data => tokenPriceIn(data))
@@ -178,11 +176,14 @@ async function tokenPrice() {
 
 
 function run() {
-    return tokenPrice()
-    // return protocolInfo()
+    // return tokenPrice()
+    return protocolInfo()
 }
 
 run()
     .then(console.log)
     .catch(console.error)
-    .finally(() => connection.destroy())
+    .finally(() => {
+        Object.values(web3s).map(web3 => web3.currentProvider.disconnect())
+        connection.destroy()
+    })
