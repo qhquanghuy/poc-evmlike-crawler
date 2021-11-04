@@ -6,9 +6,11 @@ import {protocolInfo} from './protocol-info.js'
 import { web3s } from './web3s.js'
 
 import { connection } from './db.js'
+import { dex } from './dex.js'
 
 async function run() {
     tokenPrice()
+    dex()
 
     // return protocolInfo()
 }

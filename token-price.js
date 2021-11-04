@@ -6,13 +6,13 @@ import {web3Contract, erc20Decimals, pairContract, web3s } from './web3s.js'
 import { connection } from './db.js'
 import { observableFromEvent } from './stream.js'
 
-import { id, quote } from './functions.js'
+import { addrCmp, id, quote } from './functions.js'
 
 
 
 function calPrice(tokenA, decimalsA, tokenB, decimalsB, reserve0, reserve1) {
     const decimals = 10**(decimalsA - decimalsB)
-    const ascOrdered = tokenA.address.toLowerCase() < tokenB.address.toLowerCase()
+    const ascOrdered = addrCmp(tokenA, tokenB)
     const price = ascOrdered ? (reserve1 / reserve0) : (reserve0 / reserve1)
 
     return price * decimals
@@ -34,7 +34,7 @@ function tokenPriceStream(web3, factory) {
                             price: calPrice(tokenA, decimalsA, tokenB, decimalsB, reserve0, reserve1),
                             txHash: data.transactionHash,
                             blockNumber: data.blockNumber,
-                            ...[tokenA, tokenB].sort((a, b) => a.address.toLowerCase() < b.address.toLowerCase())
+                            ...[tokenA, tokenB].sort((a, b) => addrCmp(a, b))
                         }
                     })
                 )
