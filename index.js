@@ -4,7 +4,7 @@
 import Web3 from 'web3'
 
 import chains from './contracts/chains.js'
-import { from, combineLatestWith, map, mergeMap } from 'rxjs'
+import { from, combineLatestWith, map, mergeMap, tap } from 'rxjs'
 
 import {web3Contract, erc20Decimals, pairContract } from './web3s.js'
 import { connection } from './db.js'
@@ -114,10 +114,12 @@ function tokenPriceStream(web3, factory) {
                         return {
                             price: calPrice(tokenA, decimalsA, tokenB, decimalsB, reserve0, reserve1),
                             txHash: data.transactionHash,
-                            blockNumber: data.blockNumber
+                            blockNumber: data.blockNumber,
+                            ...[tokenA, tokenB].sort((a, b) => a.address.toLowerCase() < b.address.toLowerCase())
                         }
                     })
                 )
+                .pipe(tap(console.log))
         }
 
         return {
@@ -174,15 +176,25 @@ async function tokenPriceOn(chain) {
 
 
 async function tokenPrice() {
-    const data = await Promise.all(
-        chains.flatMap(chain => {
-            return chain.exchanges.flatMap(exchange => chain.tokens.map(token => {
-                return { chain: { name: chain.name, provider: chain.provider } , exchange, token }
-            }))
+
+    const insert = (stream, insertFn) => {
+        stream.pipe(mergeMap(data => from(insertFn(data))))
+        .subscribe({
+            next(data) {
+                console.log(JSON.stringify(data))
+            },
+            error(err) { console.error('something wrong occurred: ' + err); },
+            complete() { console.log('done'); }
         })
-        .map(data => tokenPriceIn(data))
-    )
-    return data
+    }
+
+    chains.forEach(async (chain) => {
+        const obs = await tokenPriceOn(chain)
+        obs.forEach(ob => {
+            insert(ob.swap, (data) => insertTokenPriceData(web3s[chain.name], data))
+            insert(ob.sync, (data) => insertInstantPriceData(web3s[chain.name], data))
+        })
+    })
 }
 
 
@@ -193,7 +205,6 @@ async function prepareData(web3, data) {
         web3.eth.getBlock(data.tokenEth.blockNumber),
         web3.eth.getBlock(data.ethUsdt.blockNumber)
     ])
-    console.log(data)
     return [
         [data.token.name, `FROM_UNIXTIME(${tokenBlock.timestamp})`, data.exchange.name, data.tokenEth.price * data.ethUsdt.price],
         ["eth", `FROM_UNIXTIME(${ethBlock.timestamp})`, data.exchange.name, data.ethUsdt.price]
@@ -223,26 +234,7 @@ async function insertInstantPriceData(web3, data) {
     return rs
 }
 async function run() {
-
-
-    const insert = (stream, insertFn) => {
-        stream.pipe(mergeMap(data => from(insertFn(data))))
-        .subscribe({
-            next(data) {
-                console.log(JSON.stringify(data))
-            },
-            error(err) { console.error('something wrong occurred: ' + err); },
-            complete() { console.log('done'); }
-        })
-    }
-
-    chains.forEach(async (chain) => {
-        const obs = await tokenPriceOn(chain)
-        obs.forEach(ob => {
-            insert(ob.swap, (data) => insertTokenPriceData(web3s[chain.name], data))
-            insert(ob.sync, (data) => insertInstantPriceData(web3s[chain.name], data))
-        })
-    })
+    tokenPrice()
 
     // return tokenPrice()
     // return protocolInfo()

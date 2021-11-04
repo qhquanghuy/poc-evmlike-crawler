@@ -4,7 +4,6 @@ function observableFromEvent(event) {
     return new Observable(sub => {
         event
             .on('data', (data) => {
-                console.log(data)
                 sub.next(data)
             })
             .on('error', (err) => {

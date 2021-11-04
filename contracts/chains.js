@@ -22,10 +22,12 @@ export default [
                     "address": "0x5757371414417b8c6caad45baef941abc7d3ab32"
                 },
                 "usdt": {
+                    "name": "usdt",
                     "abi": "erc20",
                     "address": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f"
                 },
                 "eth": {
+                    "name": "eth",
                     "abi": "erc20",
                     "address": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619"
                 }
@@ -67,10 +69,12 @@ export default [
                     "address": "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73"
                 },
                 "usdt": {
+                    "name": "usdt",
                     "abi": "bep20",
                     "address": "0x55d398326f99059fF775485246999027B3197955"
                 },
                 "eth": {
+                    "name": "eth",
                     "abi": "bep20",
                     "address": "0x2170ed0880ac9a755fd29b2688956bd959f933f8"
                 }
