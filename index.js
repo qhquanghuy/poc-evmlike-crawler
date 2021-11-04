@@ -47,22 +47,26 @@ function allTokens() {
     })
 }
 
-function contractOf(token) {
-    const web3 = new Web3(token.chain.provider)
-    const contract = new web3.eth.Contract(abis[token.abi], token.address)
-    return contract
+function web3Contract(web3) {
+    return (contract) => {
+        return new web3.eth.Contract(abis[contract.abi], contract.address)
+    }
 }
 
-async function decimalsOf(token) {
-    return contractOf(token).methods.decimals().call()
+async function erc20Decimals(contract) {
+    return contract.methods.decimals().call()
 }
 
 async function protocolInfoOf(token) {
+    const web3 = new Web3(token.chain.provider)
+    const contractOf = web3Contract(web3)
     const contract = contractOf(token)
     const name = await contract.methods.name().call()
     const symbol = await contract.methods.symbol().call()
     const decimals = await contract.methods.decimals().call()
     const totalSupply = await contract.methods.totalSupply().call()
+
+    web3.currentProvider.disconnect()
 
     /**NOTE
      * []
@@ -111,13 +115,12 @@ async function tokenPriceIn(data) {
     const price = async (token0, token1) => {
         const pairAddr = await factory.methods.getPair(token0.address, token1.address).call()
         const contract = new web3.eth.Contract(abis['iuniswapv2-pair-abi'], pairAddr)
-        const decimals0 = await decimalsOf({...token0, chain: chain})
-        const decimals1 =  await decimalsOf({...token1, chain: chain})
+        const decimals0 = await erc20Decimals(web3Contract(web3)(token0))
+        const decimals1 =  await erc20Decimals(web3Contract(web3)(token1))
         const start = Date.now()
         const { reserve0, reserve1 } = await contract.methods.getReserves().call()
         const end = Date.now()
 
-        console.log(token0, reserve0, token1, reserve1)
 
         const ascOrdered = token0.address.toLowerCase() < token1.address.toLowerCase()
 
@@ -133,6 +136,8 @@ async function tokenPriceIn(data) {
         price(exchange.eth, exchange.usdt)
     ])
 
+    web3.currentProvider.disconnect()
+
     return {
         protocolName: exchange.name,
         tokenName: token.name,
@@ -145,6 +150,14 @@ async function tokenPriceIn(data) {
     }
 
 
+}
+
+
+async function  tokenPriceOn(chain) {
+    const web3 = new Web3(chain.provider)
+    chain.exchanges.map(exchange => {
+
+    })
 }
 
 
@@ -170,4 +183,6 @@ function run() {
 }
 
 run()
-    .then(console.log).catch(console.error)
+    .then(console.log)
+    .catch(console.error)
+    .finally(() => connection.destroy())

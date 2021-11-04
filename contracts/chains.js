@@ -1,7 +1,7 @@
 export default [
     {
         "name": "polygon",
-        "provider": "https://polygon-rpc.com",
+        "provider": "wss://ws-matic-mainnet.chainstacklabs.com",
         "tokens": [
             {
                 "name": "aave",
