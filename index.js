@@ -7,12 +7,13 @@ import pLimit from 'p-limit'
 
 import Web3 from 'web3'
 
+import Decimal from 'decimal.js'
 import mysql from 'mysql2'
 import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
 const dbConf = require('./database.json')
 import chains from './contracts/chains.js'
-import { combineLatestWith, map, Observable, share } from 'rxjs'
+import { from, combineLatestWith, map, Observable, share, mergeMap } from 'rxjs'
 
 const limit = pLimit(8)
 const abis = {
@@ -165,7 +166,7 @@ function observableFromEvent(event) {
     return new Observable(sub => {
         event
             .on('data', (data) => {
-                console.log("data is coming")
+                console.log(data)
                 sub.next(data)
             })
             .on('error', (err) => {
@@ -180,13 +181,15 @@ function observableFromEvent(event) {
 function calPrice(tokenA, decimalsA, tokenB, decimalsB, reserve0, reserve1) {
     const decimals = 10**(decimalsA - decimalsB)
     const ascOrdered = tokenA.address.toLowerCase() < tokenB.address.toLowerCase()
-    return ascOrdered ? (reserve1 / reserve0) * decimals : (reserve0 / reserve1) * decimals
+    const price = ascOrdered ? (reserve1 / reserve0) : (reserve0 / reserve1)
+
+    return price * decimals
 }
 
 function tokenPriceStream(web3, factory) {
     return async (tokenA, tokenB) => {
-        const decimalsB = await erc20Decimals(web3Contract(web3)(tokenA))
-        const decimalsA = await erc20Decimals(web3Contract(web3)(tokenB))
+        const decimalsA = await erc20Decimals(web3Contract(web3)(tokenA))
+        const decimalsB = await erc20Decimals(web3Contract(web3)(tokenB))
         const pairAddr = await factory.methods.getPair(tokenA.address, tokenB.address).call()
         const pair = pairContract(web3)(pairAddr)
 
@@ -272,16 +275,59 @@ async function tokenPrice() {
 
 
 
+async function prepareData(web3, data) {
+    const [tokenBlock, ethBlock] = await Promise.all([
+        web3.eth.getBlock(data.tokenEth.blockNumber),
+        web3.eth.getBlock(data.ethUsdt.blockNumber)
+    ])
+    console.log(data)
+    return [
+        [data.token.name, `FROM_UNIXTIME(${tokenBlock.timestamp})`, data.exchange.name, data.tokenEth.price * data.ethUsdt.price],
+        ["eth", `FROM_UNIXTIME(${ethBlock.timestamp})`, data.exchange.name, data.ethUsdt.price]
+    ]
+    .map(xs => `(${xs.map((x, idx) => idx == 1 ? x : quote(x)).join(",")})`)
+    .join(",")
+}
 
+
+async function insertTokenPriceData(web3, data) {
+    const values = await prepareData(web3, data)
+    const rs = await connection.promise().execute(
+        `INSERT INTO token_price_data (token_name, time_record, record_at, market_price) ` +
+        `VALUES ${values} `
+    )
+
+    return rs
+}
+
+async function insertInstantPriceData(web3, data) {
+
+    const values = await prepareData(web3, data)
+    const rs = await connection.promise().execute(
+        `INSERT INTO instant_price_data (token_name, time_record, protocol_name, market_price) ` +
+        `VALUES ${values} `
+    )
+    return rs
+}
 async function run() {
-    const obs = await tokenPriceOn(chains[2])
-    obs.map(ob => {
-        ob.swap.subscribe({
+
+
+    const insert = (stream, insertFn) => {
+        stream.pipe(mergeMap(data => from(insertFn(data))))
+        .subscribe({
             next(data) {
                 console.log(JSON.stringify(data))
             },
             error(err) { console.error('something wrong occurred: ' + err); },
             complete() { console.log('done'); }
+        })
+    }
+
+    chains.forEach(async (chain) => {
+        const obs = await tokenPriceOn(chain)
+        obs.forEach(ob => {
+            insert(ob.swap, (data) => insertTokenPriceData(web3s[chain.name], data))
+            insert(ob.sync, (data) => insertInstantPriceData(web3s[chain.name], data))
         })
     })
 

@@ -5,5 +5,5 @@ CREATE TABLE IF NOT EXISTS instant_price_data(
     token_name VARCHAR(50) NOT NULL,
     market_price DECIMAL(20,2) NOT NULL,
     time_record TIMESTAMP NOT NULL,
-    connection_time TIMESTAMP NOT NULL
+    connection_time TIMESTAMP DEFAULT NULL
 )
