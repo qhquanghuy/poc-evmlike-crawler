@@ -7,7 +7,6 @@ import pLimit from 'p-limit'
 
 import Web3 from 'web3'
 
-import Decimal from 'decimal.js'
 import mysql from 'mysql2'
 import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
