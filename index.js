@@ -74,9 +74,9 @@ async function protocolInfoOf(token) {
      * Leave those null for now
      */
     return {
-        name: name,
-        symbol: symbol,
-        decimals: decimals,
+        name,
+        symbol,
+        decimals,
         totalSupply: totalSupply / (10 ** decimals),
         chain: token.chain.name
     }
@@ -152,7 +152,7 @@ async function tokenPriceIn(data) {
 
 
 async function  tokenPriceOn(chain) {
-    const web3 = new Web3(chain.provider)
+    const web3 = web3s[chain.name]
     chain.exchanges.map(exchange => {
 
     })
@@ -163,7 +163,7 @@ async function tokenPrice() {
     const data = await Promise.all(
         chains.flatMap(chain => {
             return chain.exchanges.flatMap(exchange => chain.tokens.map(token => {
-                return { chain: { name: chain.name, provider: chain.provider } , exchange: exchange, token: token }
+                return { chain: { name: chain.name, provider: chain.provider } , exchange, token }
             }))
         })
         .map(data => tokenPriceIn(data))
