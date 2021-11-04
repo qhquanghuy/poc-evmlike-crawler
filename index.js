@@ -1,37 +1,19 @@
 
 
-import dotenv from 'dotenv'
-dotenv.config()
-
-import pLimit from 'p-limit'
 
 import Web3 from 'web3'
 
-import mysql from 'mysql2'
-import { createRequire } from 'module'
-const require = createRequire(import.meta.url)
-const dbConf = require('./database.json')
 import chains from './contracts/chains.js'
-import { from, combineLatestWith, map, Observable, share, mergeMap } from 'rxjs'
+import { from, combineLatestWith, map, mergeMap } from 'rxjs'
 
-const limit = pLimit(8)
-const abis = {
-    bep20: require('./contracts/bep20.json'),
-    erc20: require('./contracts/erc20.json'),
-    "iuniswapv2-factory-abi": require('./contracts/iuniswapv2-factory-abi.json'),
-    "iuniswapv2-pair-abi": require('./contracts/iuniswapv2-pair-abi.json')
-}
+import {web3Contract, erc20Decimals, pairContract } from './web3s.js'
+import { connection } from './db.js'
+import { observableFromEvent } from './stream.js'
 
-const connection = (() => {
-    const conf = dbConf[dbConf.defaultEnv]
-    return mysql.createConnection({
-        host: '127.0.0.1',
-        user: conf.user,
-        database: conf.database,
-        password: process.env[conf.password.ENV],
-        port: 33061
-    });
-})()
+import { id, quote } from './functions.js'
+
+
+
 
 const web3s = Object.fromEntries(chains.map(chain => {
     const options = {
@@ -63,13 +45,6 @@ function allTokens() {
     })
 }
 
-function web3Contract(web3) {
-    return (config) => new web3.eth.Contract(abis[config.abi], config.address)
-}
-
-async function erc20Decimals(contract) {
-    return contract.methods.decimals().call()
-}
 
 async function protocolInfoOf(token) {
     const contract = web3Contract(web3s[token.chain.name])(token)
@@ -93,9 +68,6 @@ async function protocolInfoOf(token) {
     }
 }
 
-function quote(x) {
-    return `'${x}'`
-}
 
 
 async function protocolInfo() {
@@ -117,65 +89,7 @@ async function protocolInfo() {
     return rs
 }
 
-function pairContract(web3) {
-    return (addr) => new web3.eth.Contract(abis['iuniswapv2-pair-abi'], addr)
-}
 
-async function tokenPriceIn(data) {
-    const { chain, exchange, token } = data
-    const web3 = web3s[chain.name]
-    const contractFrom = web3Contract(web3)
-    const factory = contractFrom(exchange.factory)
-
-    const price = async (tokenA, tokenB) => {
-        const pairAddr = await factory.methods.getPair(tokenA.address, tokenB.address).call()
-        const contract = pairContract(web3)(pairAddr)
-        const decimalsA = await erc20Decimals(contractFrom(tokenA))
-        const decimalsB =  await erc20Decimals(contractFrom(tokenB))
-        const start = Date.now()
-        const { reserve0, reserve1 } = await contract.methods.getReserves().call()
-        const end = Date.now()
-        return {
-            price: calPrice(tokenA, decimalsA, tokenB, decimalsB, reserve0, reserve1),
-            start: start,
-            end: end
-        }
-    }
-
-    const prices = await Promise.all([
-        price(token, exchange.eth),
-        price(exchange.eth, exchange.usdt)
-    ])
-
-    return {
-        protocolName: exchange.name,
-        tokenName: token.name,
-        ...prices.reduce((acc, ele) => {
-            return {
-                price: acc.price * ele.price,
-                connectionTime: acc.connectionTime + ele.end - ele.start
-            }
-        }, {price: 1, connectionTime: 0})
-    }
-
-
-}
-
-function observableFromEvent(event) {
-    return new Observable(sub => {
-        event
-            .on('data', (data) => {
-                console.log(data)
-                sub.next(data)
-            })
-            .on('error', (err) => {
-                sub.error(err)
-            })
-            .on('end', () => sub.unsubscribe())
-
-    })
-    .pipe(share())
-}
 
 function calPrice(tokenA, decimalsA, tokenB, decimalsB, reserve0, reserve1) {
     const decimals = 10**(decimalsA - decimalsB)
@@ -255,7 +169,7 @@ async function tokenPriceOn(chain) {
             )
         })
     )
-    return promises.flatMap(x => x)
+    return promises.flatMap(id)
 }
 
 
