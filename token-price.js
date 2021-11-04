@@ -116,7 +116,38 @@ async function tokenPrice() {
     })
 }
 
+async function prepareData(web3, data) {
+    const [tokenBlock, ethBlock] = await Promise.all([
+        web3.eth.getBlock(data.tokenEth.blockNumber),
+        web3.eth.getBlock(data.ethUsdt.blockNumber)
+    ])
+    return [
+        [data.token.name, `FROM_UNIXTIME(${tokenBlock.timestamp})`, data.exchange.name, data.tokenEth.price * data.ethUsdt.price],
+        ["eth", `FROM_UNIXTIME(${ethBlock.timestamp})`, data.exchange.name, data.ethUsdt.price]
+    ]
+    .map(xs => `(${xs.map((x, idx) => idx == 1 ? x : quote(x)).join(",")})`)
+    .join(",")
+}
 
 
+async function insertTokenPriceData(web3, data) {
+    const values = await prepareData(web3, data)
+    const rs = await connection.promise().execute(
+        `INSERT INTO token_price_data (token_name, time_record, record_at, market_price) ` +
+        `VALUES ${values} `
+    )
+
+    return rs
+}
+
+async function insertInstantPriceData(web3, data) {
+
+    const values = await prepareData(web3, data)
+    const rs = await connection.promise().execute(
+        `INSERT INTO instant_price_data (token_name, time_record, protocol_name, market_price) ` +
+        `VALUES ${values} `
+    )
+    return rs
+}
 
 export { tokenPrice }
