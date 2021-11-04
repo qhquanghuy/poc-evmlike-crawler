@@ -12,7 +12,7 @@ import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
 const dbConf = require('./database.json')
 import chains from './contracts/chains.js'
-import { map, Observable } from 'rxjs'
+import { combineLatestWith, map, Observable, share } from 'rxjs'
 
 const limit = pLimit(8)
 const abis = {
@@ -165,13 +165,16 @@ function observableFromEvent(event) {
     return new Observable(sub => {
         event
             .on('data', (data) => {
+                console.log("data is coming")
                 sub.next(data)
             })
             .on('error', (err) => {
                 sub.error(err)
             })
             .on('end', () => sub.unsubscribe())
+
     })
+    .pipe(share())
 }
 
 function calPrice(tokenA, decimalsA, tokenB, decimalsB, reserve0, reserve1) {
@@ -191,9 +194,12 @@ function tokenPriceStream(web3, factory) {
             return reserveStream
                 .pipe(map(data => {
                         const returnVal = data.returnValues
-                        console.log(data)
                         const {reserve0, reserve1} = getReserve(returnVal)
-                        return calPrice(tokenA, decimalsA, tokenB, decimalsB, reserve0, reserve1)
+                        return {
+                            price: calPrice(tokenA, decimalsA, tokenB, decimalsB, reserve0, reserve1),
+                            txHash: data.transactionHash,
+                            blockNumber: data.blockNumber
+                        }
                     })
                 )
         }
@@ -216,14 +222,38 @@ function tokenPriceStream(web3, factory) {
 }
 
 
-async function  tokenPriceOn(chain) {
+async function tokenPriceOn(chain) {
     const web3 = web3s[chain.name]
-    return Promise.all(
-        chain.exchanges.map(async (exchange) => {
+    const promises = await Promise.all(
+        chain.exchanges.flatMap(async (exchange) => {
             const factory = await web3Contract(web3)(exchange.factory)
-            return tokenPriceStream(web3, factory)(exchange.eth, exchange.usdt)
+            const ethUsdtStream =  await tokenPriceStream(web3, factory)(exchange.eth, exchange.usdt)
+
+            const combineWithEthUsdt = (stream, ethUsdt, token) => {
+                return stream
+                    .pipe(combineLatestWith(ethUsdt))
+                    .pipe(map(([tokenEth, ethUsdt]) => {
+                        return {
+                            exchange,
+                            token,
+                            tokenEth,
+                            ethUsdt
+                        }
+                    }))
+            }
+
+            return Promise.all(chain.tokens
+                .map(async (token) => {
+                    const {sync, swap} = await tokenPriceStream(web3, factory)(token, exchange.eth)
+                    return {
+                        sync: combineWithEthUsdt(sync, ethUsdtStream.sync, token),
+                        swap: combineWithEthUsdt(swap, ethUsdtStream.swap, token)
+                    }
+                })
+            )
         })
     )
+    return promises.flatMap(x => x)
 }
 
 
@@ -248,7 +278,7 @@ async function run() {
     obs.map(ob => {
         ob.swap.subscribe({
             next(data) {
-                console.log(data)
+                console.log(JSON.stringify(data))
             },
             error(err) { console.error('something wrong occurred: ' + err); },
             complete() { console.log('done'); }
