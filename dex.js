@@ -65,7 +65,7 @@ async function insert(data) {
 }
 
 
-async function dex() {
+async function depositData() {
     const streams = await Promise.all(chains.flatMap(chain => chain.exchanges.map(exchange => data(web3s[chain.name], exchange))))
 
 
@@ -82,4 +82,4 @@ async function dex() {
         })
 }
 
-export { dex }
+export { depositData }
