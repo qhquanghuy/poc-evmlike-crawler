@@ -150,4 +150,4 @@ async function insertInstantPriceData(web3, data) {
     return rs
 }
 
-export { tokenPrice }
+export { tokenPrice, calPrice }
