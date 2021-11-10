@@ -3,8 +3,6 @@ version: "3.9"
 services:
   db:
     image: mysql
-    volumes:
-      - ./data/db:/var/lib/postgresql/data
     env_file: .env
     ports:
       - 33061:3306

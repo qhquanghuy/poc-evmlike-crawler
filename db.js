@@ -11,11 +11,11 @@ const dbConf = require('./database.json')
 const connection = (() => {
     const conf = dbConf[dbConf.defaultEnv]
     return mysql.createConnection({
-        host: '127.0.0.1',
+        host: conf.host,
         user: conf.user,
         database: conf.database,
         password: process.env[conf.password.ENV],
-        port: 33061
+        port: conf.port
     });
 })()
 

@@ -36,7 +36,7 @@ export default [
     },
     {
         "name": "ethereum",
-        "provider": "ws://localhost:8546",
+        "provider": "ws://geth:8546",
         "tokens": [
             {
                 "name": "aave",

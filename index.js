@@ -8,6 +8,7 @@ import { depositData, tradingInfo } from './dex.js'
 import { aaveEth } from './lending-protocol.js'
 
 async function run() {
+    console.log("starting app")
     tokenPrice()
     depositData()
     tradingInfo()
