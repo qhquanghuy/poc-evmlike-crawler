@@ -32,8 +32,8 @@ const web3s = Object.fromEntries(chains.map(chain => {
         // Enable auto reconnection
         reconnect: {
             auto: true,
-            delay: 5000, // ms
-            maxAttempts: 5,
+            delay: 60000, // ms
+            maxAttempts: 100,
             onTimeout: false
         }
     }
