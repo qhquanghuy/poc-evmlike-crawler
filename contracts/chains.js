@@ -44,7 +44,14 @@ export default [
                 "address": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9"
             }
         ],
-        "exchanges": []
+        "exchanges": [],
+        "lending": {
+            "aave": {
+                "abi": "aave-lending-abi",
+                "address": "0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9",
+                "eth": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+            }
+        }
     },
     {
         "name": "bsc",

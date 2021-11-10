@@ -75,7 +75,7 @@ async function depositData() {
                 .pipe(mergeMap(data => from(insertDeposit(data))))
                 .subscribe(({
                     next(data) {
-                        console.log(JSON.stringify(data))
+                        console.log("done")
                     },
                     error(err) { console.error('something wrong occurred: ' + err); },
                     complete() { console.log('done'); }
@@ -153,7 +153,7 @@ async function tradingInfo() {
                 .pipe(mergeMap(data => from(insertTradingInfo(data))))
                 .subscribe(({
                     next(data) {
-                        console.log(JSON.stringify(data))
+                        console.log("done")
                     },
                     error(err) { console.error('something wrong occurred: ' + err); },
                     complete() { console.log('done'); }

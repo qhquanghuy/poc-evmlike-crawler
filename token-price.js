@@ -100,7 +100,7 @@ async function tokenPrice() {
         stream.pipe(mergeMap(data => from(insertFn(data))))
         .subscribe({
             next(data) {
-                console.log(JSON.stringify(data))
+                console.log("done")
             },
             error(err) { console.error('something wrong occurred: ' + err); },
             complete() { console.log('done'); }

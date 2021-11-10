@@ -6,7 +6,8 @@ const abis = {
     bep20: require('./contracts/bep20.json'),
     erc20: require('./contracts/erc20.json'),
     "iuniswapv2-factory-abi": require('./contracts/iuniswapv2-factory-abi.json'),
-    "iuniswapv2-pair-abi": require('./contracts/iuniswapv2-pair-abi.json')
+    "iuniswapv2-pair-abi": require('./contracts/iuniswapv2-pair-abi.json'),
+    "aave-lending-abi": require('./contracts/aave-lending-abi.json')
 }
 
 function web3Contract(web3) {
