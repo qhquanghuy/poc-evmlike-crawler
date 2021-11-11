@@ -26,6 +26,10 @@ function aaveEth() {
                 .then(block => {
                     const returnVal = data.returnValues
                     const ray = 10**27
+                    const SECONDS_PER_YEAR = 31536000
+                    const depositAPR = returnVal.liquidityRate/ray
+                    const borrowAPR = returnVal.variableBorrowRate/ray
+                    const calAPY = (apr) => ((1 + (apr / SECONDS_PER_YEAR)) ^ SECONDS_PER_YEAR) - 1
                     //NOTE: https://docs.aave.com/developers/guides/apy-and-apr#compute-data
                     return {
                         reserve: returnVal.reserve,
@@ -33,8 +37,8 @@ function aaveEth() {
                         liquidityRate: returnVal.liquidityRate,
                         stableBorrowRate: returnVal.stableBorrowRate,
                         variableBorrowRate: returnVal.variableBorrowRate,
-                        depositApy: 100 * returnVal.liquidityRate/ray,
-                        borrowApy: 100 * returnVal.variableBorrowRate/ray
+                        depositAPY: 100 * calAPY(depositAPR),
+                        borrowAPY: 100 * calAPY(borrowAPR)
                     }
                 })
             return from(promise)
