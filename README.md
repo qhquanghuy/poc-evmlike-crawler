@@ -8,7 +8,7 @@
 
 1. Price calculation:
 
-    - Price tokenA in terms of tokenB: `tokenA/tokenB = (reserveB / reserveB) * 10^(decimalA - decimalB)`
+    - Price tokenA in terms of tokenB: `tokenA/tokenB = (reserveB / reserveA) * 10^(decimalA - decimalB)`
 
     - Price tokenA in USD: `tokenA/USD = tokenA/ETH * ETH/USDT`
 
