@@ -2,7 +2,7 @@
 
 - First, start containers (geth, db). There is no retry feature so we must wait for a while to sync blockchain data then start the application
 
-- Price on DEX only, still cannot figure out how to calculate price in book-order exchange from on-chain data.
+- Price on DEX only, still cannot figure out how to calculate price in order-book exchange from on-chain data.
 
 ## About the Data
 
