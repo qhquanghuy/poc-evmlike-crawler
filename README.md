@@ -25,6 +25,8 @@
 4. APY of AAVE protocol
 
     - <https://docs.aave.com/developers/guides/apy-and-apr#compute-data>
+ 
+5. Datetime record: block timestamp of tx
 
 ## Disclaimer
 
