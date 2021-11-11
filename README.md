@@ -28,7 +28,7 @@
 
 5. Data in dex_quickswap_eth-usdt_trading_info
 
-    - Listen Swap event on DEX
+    - Listen Swap event on DEX. market_price_traded_in = value_traded_out / value_traded_in
 
 6. APY of AAVE protocol
 
