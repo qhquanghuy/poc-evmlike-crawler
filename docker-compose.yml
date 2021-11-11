@@ -4,8 +4,6 @@ services:
   db:
     image: mysql
     env_file: .env
-    ports:
-      - 33061:3306
   # geth:
   #   image: ethereum/client-go
   #   volumes:
