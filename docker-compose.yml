@@ -1,4 +1,4 @@
-version: "3.9"
+version: "3.3"
 
 services:
   db:
@@ -17,20 +17,20 @@ services:
   #     - 30303:30303
   migrate:
     build: .
-    volumes:
-      - type: bind
-        source: .
-        target: /app
+    # volumes:
+    #   - type: bind
+    #     source: .
+    #     target: /app
     command: sh migrate.sh
     depends_on:
       - db
 
   app:
     build: .
-    volumes:
-      - type: bind
-        source: .
-        target: /app
+    # volumes:
+    #   - type: bind
+    #     source: .
+    #     target: /app
     command: node index.js
     restart: always
     depends_on:
