@@ -1,7 +1,7 @@
 export default [
     {
         "name": "polygon",
-        "provider": "wss://ws-matic-mainnet.chainstacklabs.com",
+        "provider": "wss://rpc-mainnet.matic.quiknode.pro",
         "tokens": [
             {
                 "name": "aave",
