@@ -11,7 +11,7 @@ async function insert(data) {
     return connection.execute(
         `INSERT INTO \`lending_aave_eth_interest_rate\`(lending_rate,borrowing_rate,lending_distribution_apy,borrowing_distribution_apy,time_recorded) ` +
         "VALUES (?, ?, ?, ?, ?)",
-        [data.liquidityRate, data.variableBorrowRate, data.depositApy, data.borrowApy, new Date(data.timestamp*1000)]
+        [data.liquidityRate, data.variableBorrowRate, data.depositAPY, data.borrowAPY, new Date(data.timestamp*1000)]
     )
 }
 
