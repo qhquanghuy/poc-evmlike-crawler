@@ -22,11 +22,19 @@
 
     - Listen Sync event on DEX (uniswap-like protocol, occurred when reserve of pair changed)
 
-4. APY of AAVE protocol
+4. Data in dex_quickswap_eth-usdt_deposit_data
+
+    - Listen Mint event on DEX
+
+5. Data in dex_quickswap_eth-usdt_trading_info
+
+    - Listen Swap event on DEX
+
+6. APY of AAVE protocol
 
     - <https://docs.aave.com/developers/guides/apy-and-apr#compute-data>
  
-5. Datetime record: block timestamp of tx
+7. Datetime record: block timestamp of tx
 
 ## Disclaimer
 
