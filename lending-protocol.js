@@ -7,6 +7,10 @@ import {web3Contract, web3s } from './web3s.js'
 import { connection } from './db.js'
 import { observableFromEvent } from './stream.js'
 
+import { require } from './functions.js'
+
+const Decimal = require('decimal.js')
+
 async function insert(data) {
     return connection.execute(
         `INSERT INTO \`lending_aave_eth_interest_rate\`(lending_rate,borrowing_rate,lending_distribution_apy,borrowing_distribution_apy,time_recorded) ` +
@@ -27,9 +31,9 @@ function aaveEth() {
                     const returnVal = data.returnValues
                     const ray = 10**27
                     const SECONDS_PER_YEAR = 31536000
-                    const depositAPR = returnVal.liquidityRate/ray
-                    const borrowAPR = returnVal.variableBorrowRate/ray
-                    const calAPY = (apr) => ((1 + (apr / SECONDS_PER_YEAR)) ^ SECONDS_PER_YEAR) - 1
+                    const depositAPR = new Decimal(returnVal.liquidityRate).div(ray)
+                    const borrowAPR = new Decimal(returnVal.variableBorrowRate).div(ray)
+                    const calAPY = (apr) => apr.div(SECONDS_PER_YEAR).plus(1).pow(SECONDS_PER_YEAR).minus(1)
                     //NOTE: https://docs.aave.com/developers/guides/apy-and-apr#compute-data
                     return {
                         reserve: returnVal.reserve,
@@ -37,8 +41,8 @@ function aaveEth() {
                         liquidityRate: returnVal.liquidityRate,
                         stableBorrowRate: returnVal.stableBorrowRate,
                         variableBorrowRate: returnVal.variableBorrowRate,
-                        depositAPY: 100 * calAPY(depositAPR),
-                        borrowAPY: 100 * calAPY(borrowAPR)
+                        depositAPY: calAPY(depositAPR).mul(100).toString(),
+                        borrowAPY: calAPY(borrowAPR).mul(100).toString()
                     }
                 })
             return from(promise)
