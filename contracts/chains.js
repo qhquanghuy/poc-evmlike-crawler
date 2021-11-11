@@ -36,7 +36,7 @@ export default [
     },
     {
         "name": "ethereum",
-        "provider": "ws://geth:8546",
+        "provider": "wss://mainnet.infura.io/ws/v3/b42c54ee5023450ca91df647b55060a5",
         "tokens": [
             {
                 "name": "aave",

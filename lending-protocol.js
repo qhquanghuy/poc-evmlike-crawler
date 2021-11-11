@@ -20,7 +20,7 @@ function aaveEth() {
 
     const web3 = web3s[ether.name]
     const lendingContract = web3Contract(web3)(ether.lending.aave)
-    observableFromEvent(lendingContract.events.ReserveDataUpdated(ether.lending.aave.eth))
+    observableFromEvent(lendingContract.events.ReserveDataUpdated({filter: { reserve: ether.lending.aave.eth }}))
         .pipe(mergeMap(data => {
             const promise = web3.eth.getBlock(data.blockNumber)
                 .then(block => {

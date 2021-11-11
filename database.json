@@ -4,8 +4,8 @@
         "driver": "mysql",
         "user": "root",
         "password": {"ENV": "MYSQL_ROOT_PASSWORD"},
-        "port": 33061,
+        "port": 3306,
         "database": "test",
-        "host": "127.0.0.1"
+        "host": "db"
     }
 }

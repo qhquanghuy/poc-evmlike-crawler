@@ -6,14 +6,39 @@ services:
     env_file: .env
     ports:
       - 33061:3306
-  geth:
-    image: ethereum/client-go
+  # geth:
+  #   image: ethereum/client-go
+  #   volumes:
+  #     - type: bind
+  #       source: ~/ethereum-1
+  #       target: /root
+  #   command: --syncmode light --http --ws --http.api personal,eth,net,web3 --http.corsdomain '*' --http.addr 0.0.0.0 --ws.addr 0.0.0.0
+  #   ports:
+  #     - 8545:8545
+  #     - 8546:8546
+  #     - 30303:30303
+  migrate:
+    build: .
     volumes:
       - type: bind
-        source: ~/ethereum
-        target: /root
-    command: --syncmode light --http --ws --http.api personal,eth,net,web3 --http.corsdomain '*' --http.addr 0.0.0.0 --ws.addr 0.0.0.0
+        source: .
+        target: /app
+    command: sh migrate.sh
+    depends_on:
+      - db
+
+  app:
+    build: .
+    volumes:
+      - type: bind
+        source: .
+        target: /app
+    command: node index.js
+    restart: always
+    depends_on:
+      - migrate
+  adminer:
+    image: adminer
+    restart: always
     ports:
-      - 8545:8545
-      - 8546:8546
-      - 30303:30303
+      - 8080:8080
