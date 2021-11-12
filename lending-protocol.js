@@ -24,7 +24,7 @@ function aaveEth() {
 
     const web3 = web3s[ether.name]
     const lendingContract = web3Contract(web3)(ether.lending.aave)
-    observableFromEvent(lendingContract.events.ReserveDataUpdated({filter: { reserve: ether.lending.aave.eth }}))
+    observableFromEvent(lendingContract.events.ReserveDataUpdated({fromBlock: 13599000, filter: { reserve: ether.lending.aave.eth }}))
         .pipe(mergeMap(data => {
             const promise = web3.eth.getBlock(data.blockNumber)
                 .then(block => {
@@ -41,8 +41,8 @@ function aaveEth() {
                         liquidityRate: returnVal.liquidityRate,
                         stableBorrowRate: returnVal.stableBorrowRate,
                         variableBorrowRate: returnVal.variableBorrowRate,
-                        depositAPY: calAPY(depositAPR).mul(100).toString(),
-                        borrowAPY: calAPY(borrowAPR).mul(100).toString()
+                        depositAPY: calAPY(depositAPR).times(100).toString(),
+                        borrowAPY: calAPY(borrowAPR).times(100).toString()
                     }
                 })
             return from(promise)
